@@ -8,7 +8,13 @@ import importlib
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
+# Load dotenv dynamically so environments without the optional package can
+# still import this provider.
+try:
+    load_dotenv = importlib.import_module("dotenv").load_dotenv
+except ImportError:
+    def load_dotenv(*args: Any, **kwargs: Any) -> None:
+        return None
 
 # Import dynamically so static analyzers do not fail when the optional SDK
 # is installed in a different environment or exposes ``google.genai`` as a
