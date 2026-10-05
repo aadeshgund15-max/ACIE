@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# OS Files
+Thumbs.db
+.DS_Store
+# ChromaDB
+chromadb/
+
+# Hugging Face Cache
+.cache/
