@@ -27,5 +27,3 @@ Thumbs.db
 # ChromaDB
 chromadb/
 
-# Hugging Face Cache
-.cache/

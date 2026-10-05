@@ -3,7 +3,7 @@ Adaptive Context Intelligence Engine (ACIE)
 Groq Provider
 """
 
-from groq import Groq
+from importlib import import_module
 from typing import Any
 
 
@@ -32,7 +32,8 @@ class GroqProvider(BaseProvider):
         print("=" * 60)
         print()
 
-        self.client = Groq(
+        groq_module = import_module("groq")
+        self.client = groq_module.Groq(
             api_key=api_key
         )
 

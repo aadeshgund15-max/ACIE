@@ -4,11 +4,16 @@ Gemini Provider
 """
 
 import os
+import importlib
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from google import genai
+
+# Import dynamically so static analyzers do not fail when the optional SDK
+# is installed in a different environment or exposes ``google.genai`` as a
+# namespace package.
+genai = importlib.import_module("google.genai")
 
 from Backend.llm.providers.base_provider import BaseProvider
 

@@ -4,8 +4,7 @@ Ollama Provider
 """
 
 from typing import Generator, Any
-
-from ollama import Client
+from importlib import import_module
 
 from Backend.llm.providers.base_provider import BaseProvider
 
@@ -24,9 +23,16 @@ class OllamaProvider(BaseProvider):
         print("Initializing Ollama Provider")
         print("=" * 60)
 
-        self.client = Client(
-            host="http://localhost:11434"
-        )
+        try:
+            ollama = import_module("ollama")
+            self.client = ollama.Client(
+                host="http://localhost:11434"
+            )
+        except ModuleNotFoundError as error:
+            raise RuntimeError(
+                "The Ollama Python package is required. Install it with: "
+                "pip install ollama"
+            ) from error
 
         print("Host          : http://localhost:11434")
         print("Model         :", self.model_name)
