@@ -369,6 +369,10 @@ def chat(request: ChatRequest):
             _recent_chat_metrics.append({
                 "latency_ms": (perf_counter() - started_at) * 1000,
                 "compression_ratio": metrics.get("compression_ratio"),
+                "tokens_saved": metrics.get("tokens_saved"),
+                "confidence": metrics.get("confidence"),
+                "memories_selected": metrics.get("memories_selected", 0),
+                "memories_available": metrics.get("memories_available", 0),
             })
 
     return result
@@ -402,18 +406,7 @@ def agent_status():
 
 @router.get("/evaluation")
 def evaluation():
-
-    return {
-
-        "compression_ratio":"72%",
-
-        "token_reduction":"65%",
-
-        "memory_efficiency":"89%",
-
-        "reasoning_score":"94%"
-
-    }
+    return dashboard_metrics()
 
 
 @router.get("/dashboard-metrics")
@@ -446,16 +439,49 @@ def dashboard_metrics():
         except (TypeError, ValueError):
             pass
 
+    chat_confidence_values = []
+    tokens_saved_values = []
+    retrieval_hits = 0
+    retrieval_samples = 0
+    for sample in chat_samples:
+        try:
+            chat_confidence_values.append(float(sample["confidence"]))
+        except (KeyError, TypeError, ValueError):
+            pass
+        try:
+            tokens_saved_values.append(float(sample["tokens_saved"]))
+        except (KeyError, TypeError, ValueError):
+            pass
+        try:
+            available = int(sample["memories_available"])
+            if available > 0:
+                retrieval_samples += 1
+                if int(sample["memories_selected"]) > 0:
+                    retrieval_hits += 1
+        except (KeyError, TypeError, ValueError):
+            pass
+
     def average(values):
         return round(sum(values) / len(values), 2) if values else None
 
     return {
         "available": True,
         "stored_memories": len(active_memories),
+        "total_memories": len(rows),
+        "active_memories": len(active_memories),
         "average_memory_confidence": average(confidence_values),
         "confidence_sample_count": len(confidence_values),
+        "average_chat_confidence": average(chat_confidence_values),
+        "chat_confidence_sample_count": len(chat_confidence_values),
         "average_compression_ratio": average(compression_values),
         "compression_sample_count": len(compression_values),
+        "tokens_saved_total": round(sum(tokens_saved_values), 2) if tokens_saved_values else None,
+        "tokens_saved_sample_count": len(tokens_saved_values),
+        "retrieval_coverage": (
+            round(retrieval_hits / retrieval_samples * 100, 2)
+            if retrieval_samples else None
+        ),
+        "retrieval_sample_count": retrieval_samples,
         "average_response_latency_ms": average(latency_values),
         "chat_sample_count": len(latency_values),
     }

@@ -313,10 +313,10 @@ export const getEvaluationMetrics = () =>
     safeRequest(
         () => client.get("/evaluation"),
         {
-            compressionRatio: "72%",
-            tokenReduction: "65%",
-            memoryEfficiency: "89%",
-            reasoningScore: "94%",
+            available: false,
+            compression_sample_count: 0,
+            retrieval_sample_count: 0,
+            chat_confidence_sample_count: 0,
         }
     );
 
@@ -326,10 +326,18 @@ export const getDashboardMetrics = () =>
         {
             available: false,
             stored_memories: 0,
+            total_memories: 0,
+            active_memories: 0,
             average_memory_confidence: null,
             confidence_sample_count: 0,
+            average_chat_confidence: null,
+            chat_confidence_sample_count: 0,
             average_compression_ratio: null,
             compression_sample_count: 0,
+            tokens_saved_total: null,
+            tokens_saved_sample_count: 0,
+            retrieval_coverage: null,
+            retrieval_sample_count: 0,
             average_response_latency_ms: null,
             chat_sample_count: 0,
         }

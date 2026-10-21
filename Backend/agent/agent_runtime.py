@@ -366,6 +366,12 @@ class AgentRuntime:
                         memory_result.get("compression", {}) or {}
                     ).get("tokens_saved"),
                     "confidence": memory_result.get("confidence"),
+                    "memories_selected": (
+                        memory_result.get("metrics", {}) or {}
+                    ).get("memories_selected", 0),
+                    "memories_available": (
+                        memory_result.get("metrics", {}) or {}
+                    ).get("memories_in_store", 0),
                 },
 
                 "execution":
