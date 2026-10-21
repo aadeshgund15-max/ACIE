@@ -29,7 +29,9 @@ from Backend.llm.providers.base_provider import BaseProvider
 # --------------------------------------------------
 
 ROOT = Path(__file__).resolve().parents[3]
-load_dotenv(ROOT / ".env")
+for env_file in (ROOT / ".env", ROOT / "Backend" / ".env"):
+    if env_file.is_file():
+        load_dotenv(env_file)
 
 
 class GeminiProvider(BaseProvider):
@@ -43,13 +45,7 @@ class GeminiProvider(BaseProvider):
         print("\n" + "=" * 60)
         print("Initializing Gemini Provider")
         print("=" * 60)
-        print("Loaded .env :", ROOT / ".env")
-        print("API Key Found:", api_key is not None)
-
-        if api_key:
-            print("Key Prefix:", api_key[:10] + "...")
-        else:
-            print("Key Prefix: None")
+        print("API Key Found:", bool(api_key and api_key.strip()))
 
         print("=" * 60 + "\n")
 

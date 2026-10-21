@@ -15,13 +15,16 @@ class Environment:
 
     def __init__(self):
 
-        self.root_directory = Path.cwd()
+        self.root_directory = Path(__file__).resolve().parents[2]
 
-        self.env_file = self.root_directory / ".env"
+        self.env_files = (
+            self.root_directory / ".env",
+            self.root_directory / "Backend" / ".env",
+        )
 
-        if self.env_file.exists():
-
-            load_dotenv(self.env_file)
+        for env_file in self.env_files:
+            if env_file.is_file():
+                load_dotenv(env_file)
 
     # -------------------------------------------------
     # Get Environment Variable

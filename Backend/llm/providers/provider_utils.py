@@ -14,9 +14,16 @@ from dotenv import load_dotenv
 # -------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-ENV_FILE = PROJECT_ROOT / ".env"
+ENV_FILES = (
+    PROJECT_ROOT / ".env",
+    PROJECT_ROOT / "Backend" / ".env",
+)
 
-load_dotenv(ENV_FILE)
+# Support both the repository-level configuration and the Backend/.env file
+# used by this project. Existing process variables keep precedence.
+for ENV_FILE in ENV_FILES:
+    if ENV_FILE.is_file():
+        load_dotenv(ENV_FILE)
 
 
 # -------------------------------------------------
