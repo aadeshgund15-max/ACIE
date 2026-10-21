@@ -358,6 +358,16 @@ class AgentRuntime:
 
 
 
+                "metrics": {
+                    "compression_ratio": (
+                        memory_result.get("compression", {}) or {}
+                    ).get("compression_ratio"),
+                    "tokens_saved": (
+                        memory_result.get("compression", {}) or {}
+                    ).get("tokens_saved"),
+                    "confidence": memory_result.get("confidence"),
+                },
+
                 "execution":
                 execution_result,
 

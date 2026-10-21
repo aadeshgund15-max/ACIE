@@ -320,6 +320,21 @@ export const getEvaluationMetrics = () =>
         }
     );
 
+export const getDashboardMetrics = () =>
+    safeRequest(
+        () => client.get("/dashboard-metrics"),
+        {
+            available: false,
+            stored_memories: 0,
+            average_memory_confidence: null,
+            confidence_sample_count: 0,
+            average_compression_ratio: null,
+            compression_sample_count: 0,
+            average_response_latency_ms: null,
+            chat_sample_count: 0,
+        }
+    );
+
 /* =====================================================
    EXPORT
 ===================================================== */

@@ -6,6 +6,9 @@ API Routes
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Literal
+from collections import deque
+from threading import Lock
+from time import perf_counter
 
 from Backend.collector.context_collector import ContextCollector
 from Backend.scorer.importance_scorer import ImportanceScorer
@@ -62,6 +65,9 @@ pipeline = MemoryPipeline()
 manager = PipelineManager()
 reflection_engine = ReflectionEngine()
 agent_runtime = AgentRuntime()
+
+_recent_chat_metrics = deque(maxlen=50)
+_chat_metrics_lock = Lock()
 
 
 @router.get("/")
@@ -348,6 +354,7 @@ def execute_pipeline(request: StoreRequest):
 @router.post("/chat")
 def chat(request: ChatRequest):
 
+    started_at = perf_counter()
     result = agent_runtime.run(
         request.query,
         conversation=[
@@ -355,6 +362,14 @@ def chat(request: ChatRequest):
             for message in request.conversation
         ],
     )
+
+    if result.get("status") == "SUCCESS":
+        metrics = result.get("metrics", {}) or {}
+        with _chat_metrics_lock:
+            _recent_chat_metrics.append({
+                "latency_ms": (perf_counter() - started_at) * 1000,
+                "compression_ratio": metrics.get("compression_ratio"),
+            })
 
     return result
 
@@ -398,6 +413,51 @@ def evaluation():
 
         "reasoning_score":"94%"
 
+    }
+
+
+@router.get("/dashboard-metrics")
+def dashboard_metrics():
+
+    rows = memory_manager.get_all_memories()
+    active_memories = [
+        row for row in rows
+        if len(row) > 8 and str(row[8]).upper() == "ACTIVE"
+    ]
+    confidence_values = []
+    for row in active_memories:
+        try:
+            confidence_values.append(float(row[3]))
+        except (TypeError, ValueError):
+            continue
+
+    with _chat_metrics_lock:
+        chat_samples = list(_recent_chat_metrics)
+
+    compression_values = []
+    latency_values = []
+    for sample in chat_samples:
+        try:
+            compression_values.append(float(sample["compression_ratio"]))
+        except (TypeError, ValueError):
+            pass
+        try:
+            latency_values.append(float(sample["latency_ms"]))
+        except (TypeError, ValueError):
+            pass
+
+    def average(values):
+        return round(sum(values) / len(values), 2) if values else None
+
+    return {
+        "available": True,
+        "stored_memories": len(active_memories),
+        "average_memory_confidence": average(confidence_values),
+        "confidence_sample_count": len(confidence_values),
+        "average_compression_ratio": average(compression_values),
+        "compression_sample_count": len(compression_values),
+        "average_response_latency_ms": average(latency_values),
+        "chat_sample_count": len(latency_values),
     }
 
 # =====================================

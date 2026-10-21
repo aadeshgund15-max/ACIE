@@ -14,6 +14,8 @@ Responsible for:
 */
 
 
+import { useEffect, useState } from "react";
+
 import {
 
     motion
@@ -24,6 +26,8 @@ import {
 import AgentStatus from "../components/AgentStatus";
 
 import MetricsCard from "../components/MetricsCard";
+
+import { getDashboardMetrics } from "../api/client";
 
 import ReasoningTrace from "../components/ReasoningTrace";
 
@@ -49,106 +53,100 @@ import {
 
 function Dashboard(){
 
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loadingMetrics, setLoadingMetrics] = useState(true);
 
+    useEffect(() => {
+        let mounted = true;
 
+        const loadMetrics = async () => {
+            const result = await getDashboardMetrics();
+            if (mounted) {
+                setDashboardData(result);
+                setLoadingMetrics(false);
+            }
+        };
 
+        loadMetrics();
+        const refreshTimer = window.setInterval(loadMetrics, 30000);
 
-    const metrics=[
+        return () => {
+            mounted = false;
+            window.clearInterval(refreshTimer);
+        };
+    }, []);
 
+    const formatPercent = (value) =>
+        value == null ? "—" : `${Math.round(value)}%`;
 
+    const formatLatency = (value) => {
+        if (value == null) return "—";
+        return value >= 1000
+            ? `${(value / 1000).toFixed(1)}s`
+            : `${Math.round(value)}ms`;
+    };
 
-
-
+    const countChats = dashboardData?.chat_sample_count ?? 0;
+    const countMemories = dashboardData?.stored_memories ?? 0;
+    const compressionSamples = dashboardData?.compression_sample_count ?? 0;
+    const confidenceSamples = dashboardData?.confidence_sample_count ?? 0;
+    const metricsAvailable = dashboardData?.available === true;
+    const backendUnavailable = !loadingMetrics && !metricsAvailable;
+    const metrics = [
         {
-
-
-            title:"Compression Ratio",
-
-
-            value:"72%",
-
-
-            description:"Context optimization achieved",
-
-
-            type:"compression"
-
-
-
+            title: "Compression Ratio",
+            value: loadingMetrics
+                ? "…"
+                : metricsAvailable
+                    ? formatPercent(dashboardData?.average_compression_ratio)
+                    : "—",
+            description: backendUnavailable
+                ? "Backend unavailable"
+                : compressionSamples
+                    ? `Average from ${compressionSamples} recent chats`
+                    : "Chat activity needed to calculate",
+            type: "compression"
         },
-
-
-
-
-
-
         {
-
-
-            title:"Stored Memories",
-
-
-            value:"128",
-
-
-            description:"Long term agent memories",
-
-
-            type:"memory"
-
-
-
+            title: "Stored Memories",
+            value: loadingMetrics ? "…" : metricsAvailable ? String(countMemories) : "—",
+            description: backendUnavailable
+                ? "Backend unavailable"
+                : "Active memories in your database",
+            type: "memory"
         },
-
-
-
-
-
-
         {
-
-
-            title:"Response Latency",
-
-
-            value:"1.8s",
-
-
-            description:"Average response time",
-
-
-            type:"latency"
-
-
-
+            title: "Response Latency",
+            value: loadingMetrics
+                ? "…"
+                : metricsAvailable
+                    ? formatLatency(dashboardData?.average_response_latency_ms)
+                    : "—",
+            description: backendUnavailable
+                ? "Backend unavailable"
+                : countChats
+                    ? `Average across ${countChats} recent chats`
+                    : "Chat activity needed to calculate",
+            type: "latency"
         },
-
-
-
-
-
-
         {
-
-
-            title:"Agent Confidence",
-
-
-            value:"94%",
-
-
-            description:"Reasoning confidence score",
-
-
-            type:"confidence"
-
-
-
+            title: "Average Memory Confidence",
+            value: loadingMetrics
+                ? "…"
+                : metricsAvailable
+                    ? formatPercent(
+                        dashboardData?.average_memory_confidence == null
+                            ? null
+                            : dashboardData.average_memory_confidence * 100
+                    )
+                    : "—",
+            description: backendUnavailable
+                ? "Backend unavailable"
+                : confidenceSamples
+                    ? `Based on ${confidenceSamples} active memories`
+                    : "No scored memories yet",
+            type: "confidence"
         }
-
-
-
-
     ];
 
 
@@ -339,7 +337,7 @@ function Dashboard(){
                 <p>
 
 
-                    Adaptive Context Intelligence Engine Monitoring Center
+                    Personal metrics from your stored memories and recent chats
 
 
 
