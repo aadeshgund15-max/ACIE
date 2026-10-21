@@ -4,7 +4,8 @@ API Routes
 """
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
 
 from Backend.collector.context_collector import ContextCollector
 from Backend.scorer.importance_scorer import ImportanceScorer
@@ -28,9 +29,16 @@ from Backend.models.request_models import (
 )
 
 
+class ChatMessage(BaseModel):
+
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
 class ChatRequest(BaseModel):
 
     query: str
+    conversation: list[ChatMessage] = Field(default_factory=list, max_length=24)
 
 
 class ChatResponse(BaseModel):
@@ -341,7 +349,11 @@ def execute_pipeline(request: StoreRequest):
 def chat(request: ChatRequest):
 
     result = agent_runtime.run(
-        request.query
+        request.query,
+        conversation=[
+            {"role": message.role, "content": message.content}
+            for message in request.conversation
+        ],
     )
 
     return result

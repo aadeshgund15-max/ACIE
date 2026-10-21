@@ -312,7 +312,9 @@ class AgentRuntime:
 
                     memory_result=memory_result,
 
-                    retrieval_result=retrieval_result
+                    retrieval_result=retrieval_result,
+
+                    conversation=conversation,
 
                 )
 

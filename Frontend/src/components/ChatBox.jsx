@@ -8,13 +8,14 @@ ChatBox Component
 =====================================================
 */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
     Send,
     User,
     Bot,
-    Loader2
+    Loader2,
+    Plus
 } from "lucide-react";
 
 import useChat from "../hooks/useChat";
@@ -22,12 +23,18 @@ import useChat from "../hooks/useChat";
 function ChatBox({ onTraceUpdate }) {
 
     const [message, setMessage] = useState("");
+    const bottomRef = useRef(null);
 
     const {
         messages,
         loading,
-        sendMessage
+        sendMessage,
+        clearChat
     } = useChat();
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, loading]);
 
     const handleSend = async () => {
 
@@ -68,6 +75,22 @@ function ChatBox({ onTraceUpdate }) {
     return (
 
         <div className="chat-box">
+
+            <div className="chat-toolbar">
+                <span>{messages.length ? "Conversation" : "New conversation"}</span>
+                <button
+                    type="button"
+                    className="new-chat-button"
+                    onClick={() => {
+                        clearChat();
+                        onTraceUpdate?.([]);
+                    }}
+                    disabled={loading || messages.length === 0}
+                >
+                    <Plus size={16} />
+                    New chat
+                </button>
+            </div>
 
             <div className="chat-messages">
 
@@ -128,22 +151,27 @@ function ChatBox({ onTraceUpdate }) {
 
                 )}
 
+                <div ref={bottomRef} />
+
             </div>
 
-            <div className="chat-input">
+            <div className="chat-composer">
 
-                <input
-                    type="text"
+                <textarea
                     placeholder="Ask ACIE anything..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={loading}
+                    rows={1}
+                    aria-label="Message ACIE"
                 />
 
                 <button
                     onClick={handleSend}
                     disabled={loading || !message.trim()}
+                    aria-label="Send message"
+                    title="Send message"
                 >
 
                     <Send size={18} />
