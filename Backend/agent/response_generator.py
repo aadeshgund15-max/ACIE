@@ -109,6 +109,14 @@ class ResponseGenerator:
             logger.exception("LLM call failed")
             return None, "llm", f"{type(exc).__name__}: {exc}"
 
+        # Providers may return a structured failure instead of raising. Keep
+        # that diagnostic; treating it as an empty response hid the actual
+        # reason chat was falling back (invalid key, model, quota, etc.).
+        if isinstance(raw, dict) and raw.get("success") is False:
+            provider = raw.get("provider") or "LLM provider"
+            provider_error = raw.get("error") or "request failed"
+            return None, "llm", f"{provider} request failed: {provider_error}"
+
         text = self._extract_text(raw)
         if not text:
             return None, "llm", "empty response from provider"

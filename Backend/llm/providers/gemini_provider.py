@@ -36,7 +36,7 @@ for env_file in (ROOT / ".env", ROOT / "Backend" / ".env"):
 
 class GeminiProvider(BaseProvider):
 
-    def __init__(self, model_name="gemini-flash-latest"):
+    def __init__(self, model_name="gemini-3.5-flash-lite"):
 
         super().__init__(model_name)
 
@@ -70,58 +70,56 @@ class GeminiProvider(BaseProvider):
         max_tokens=2048
     ) -> Any:
 
-        try:
+        # Use Flash-Lite by default. If it is temporarily unavailable, retry
+        # once on Google's current Flash alias.
+        models_to_try = [self.model_name]
+        if self.model_name == "gemini-3.5-flash-lite":
+            models_to_try.append("gemini-flash-latest")
 
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config={
-                    "temperature": temperature,
-                    "max_output_tokens": max_tokens
-                }
-            )
+        last_error = None
+        for model_name in models_to_try:
+            try:
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config={
+                        "temperature": temperature,
+                        "max_output_tokens": max_tokens
+                    }
+                )
 
-            usage = {}
-
-            if hasattr(response, "usage_metadata"):
-
-                metadata = response.usage_metadata
-
+                metadata = getattr(response, "usage_metadata", None)
                 usage = {
-                    "prompt_tokens": getattr(
-                        metadata,
-                        "prompt_token_count",
-                        None
-                    ),
-                    "completion_tokens": getattr(
-                        metadata,
-                        "candidates_token_count",
-                        None
-                    ),
-                    "total_tokens": getattr(
-                        metadata,
-                        "total_token_count",
-                        None
-                    )
+                    "prompt_tokens": getattr(metadata, "prompt_token_count", None),
+                    "completion_tokens": getattr(metadata, "candidates_token_count", None),
+                    "total_tokens": getattr(metadata, "total_token_count", None)
+                } if metadata else {}
+
+                return {
+                    "success": True,
+                    "provider": "Gemini",
+                    "model": model_name,
+                    "response": response.text,
+                    "usage": usage
                 }
 
-            return {
-                "success": True,
-                "provider": "Gemini",
-                "model": self.model_name,
-                "response": response.text,
-                "usage": usage
-            }
+            except Exception as exc:
+                last_error = exc
+                error_text = str(exc).upper()
+                transient = any(
+                    marker in error_text
+                    for marker in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED")
+                )
+                if not transient:
+                    break
 
-        except Exception as e:
-
-            return {
-                "success": False,
-                "provider": "Gemini",
-                "model": self.model_name,
-                "response": "",
-                "error": str(e)
-            }
+        return {
+            "success": False,
+            "provider": "Gemini",
+            "model": self.model_name,
+            "response": "",
+            "error": str(last_error) if last_error else "Gemini request failed"
+        }
 
     # --------------------------------------------------
     # Streaming

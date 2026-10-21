@@ -28,7 +28,6 @@ class GroqProvider(BaseProvider):
         api_key = get_api_key("GROQ_API_KEY")
 
         print("API Key Found :", True)
-        print("Key Prefix    :", api_key[:10] + "...")
         print("=" * 60)
         print()
 

@@ -39,7 +39,7 @@ class ProviderFactory:
         if model in gemini_models:
 
             return GeminiProvider(
-                model_name="gemini-flash-latest"
+                model_name="gemini-3.5-flash-lite"
             )
 
 

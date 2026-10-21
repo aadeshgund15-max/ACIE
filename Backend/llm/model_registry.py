@@ -18,7 +18,7 @@ class ModelRegistry:
 
                 "provider": "Google",
 
-                "model_name": "gemini-flash-latest",
+                "model_name": "gemini-3.5-flash-lite",
 
                 "capabilities": [
 
